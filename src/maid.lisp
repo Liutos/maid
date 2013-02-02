@@ -1,5 +1,7 @@
 (in-package :maid)
 
+(proclaim '(optimize (speed 3)))
+
 (defun http-char (c1 c2 &optional (default #\Space))
   (let ((code (parse-integer (coerce (list c1 c2) 'string)
                              :radix 16
@@ -10,7 +12,6 @@
 
 (defun decode-param (s)
   (labels ((f (acc lst)
-             (declare (optimize (speed 3)))
              (if lst
                  (case (car lst)
                    ;; (#\% (cons (http-char (cadr lst) (caddr lst))
@@ -35,7 +36,6 @@
 
 (defun parse-params (s)
   (labels ((aux (acc s)
-             (declare (optimize (speed 3)))
              (let ((i1 (position #\= s))
                    (i2 (position #\& s)))
                (cond (i1 (aux (cons (cons (intern (string-upcase (subseq s 0 i1)))
@@ -66,8 +66,7 @@
 
 (defun get-header (stream)
   (labels ((aux (acc stream)
-             (declare (optimize (speed 3)))
-             (let* ((s (read-line stream))
+             (let* ((s (the string (read-line stream)))
                     (h (let ((i (position #\: s)))
                          (when i
                            (cons (intern (string-upcase (subseq s 0 i)))

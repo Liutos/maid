@@ -14,6 +14,7 @@
   (labels ((f (acc lst)
              (if lst
                  (case (car lst)
+                   ;; Original codes in not tail-recursive form.
                    ;; (#\% (cons (http-char (cadr lst) (caddr lst))
                    ;;            (f (cdddr lst))))
                    ;; (#\+ (cons #\Space (f (cdr lst))))
@@ -25,6 +26,7 @@
                  acc)))
     (coerce (nreverse (f '() (coerce s 'list))) 'string)))
 
+;;; Original function PARSE-PARAMS in not tail-recursive form.
 ;; (defun parse-params (s)
 ;;   (let* ((i1 (position #\= s))
 ;;          (i2 (position #\& s)))
@@ -55,6 +57,7 @@
         (cons (subseq url 0 x) (parse-params (subseq url (1+ x))))
         (cons url '()))))
 
+;;; Original function GET-HEADER in not tail-recursive form.
 ;; (defun get-header (stream)
 ;;   (let* ((s (read-line stream))
 ;;          (h (let ((i (position #\: s)))
@@ -85,21 +88,21 @@
 
 (defun socket-server (port)
   (let ((server
-         (iolib:make-socket :connect :passive
-                     :address-family :internet
-                     :type :stream
-                     :external-format '(:utf-8 :eol-style :crlf)
-                     :ipv6 nil)))
-    (iolib:bind-address server iolib:+ipv4-unspecified+
-                        :port port :reuse-address t)
-    (iolib:listen-on server :backlog 5)
+         (make-socket :connect :passive
+                      :address-family :internet
+                      :type :stream
+                      :external-format '(:utf-8 :eol-style :crlf)
+                      :ipv6 nil)))
+    (bind-address server +ipv4-unspecified+
+                  :port port :reuse-address t)
+    (listen-on server :backlog 5)
     server))
 
 (defun socket-server-close (server)
   (close server))
 
 (defun socket-accept (socket)
-  (iolib:accept-connection socket :wait t))
+  (accept-connection socket :wait t))
 
 (defun serve (request-handler)
   (let ((socket (socket-server 8080)))

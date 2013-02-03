@@ -7,10 +7,11 @@
 
 (defsystem :maid
   :description "Web Server"
-  :version "0.0.1"
+  :version "0.0.2"
   :licence "MIT"
   :author "Liutos <mat.liutos@gmail.com>"
-  :depends-on (:iolib)
+  :depends-on (:iolib
+               :local-time)
   :components
   ((:module "src"
             :components

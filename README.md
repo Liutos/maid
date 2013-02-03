@@ -19,4 +19,12 @@ Liutos(<mat.liutos@gmail.com>)
 ## TODOs
 
 * response header
+  * <strike>Status-Line</strike>
+  * general-header
+    * <strike>Date</strike>
+    * <strike>Connection</strike>
+  * response-header
+    * <strike>Server</strike>
+  * entity-header
+    * <strike>Content-Type</strike>
 * dispatcher

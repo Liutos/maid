@@ -122,7 +122,7 @@
   (declare (ignore header))
   (format t "HTTP/1.1 200 OK~%")
   (format t "Date: ")
-  (local-time:format-rfc1123-timestring *standard-output* (local-time:now))
+  (format-rfc1123-timestring *standard-output* (now))
   (format t "~%")
   (format t "Connection: close~%")
   (format t "Server: Maid/0.0.1~%")

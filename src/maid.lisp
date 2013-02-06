@@ -48,6 +48,9 @@
                      (t acc)))))
     (nreverse (aux '() s))))
 
+(defun parse-method (s)
+  (intern (string-upcase (subseq s 0 (position #\Space s)))))
+
 (defun parse-url (s)
   (let* ((url (subseq s
                       (+ 2 (position #\Space s))
@@ -109,7 +112,9 @@
     (unwind-protect
          (progn
             (with-open-stream (stream (socket-accept socket))
-              (let* ((url (parse-url (read-line stream)))
+              (let* ((line (read-line stream))
+                     (url (parse-url line))
+                     (method (parse-method line))
                      (path (car url))
                      (header (get-header stream))
                      (params (append (cdr url)
@@ -118,7 +123,7 @@
                      )
                 (write-header stream)
                 ;; (funcall request-handler path header params)
-                (princ (funcall request-handler path header params) stream))))
+                (princ (funcall request-handler method path header params) stream))))
       (socket-server-close socket))))
 
 (defun write-header (stream)
@@ -131,8 +136,8 @@
   (format stream "Content-Type: text/html~%")
   (format stream "~%"))
 
-(defun hello-request-handler (path header params)
-  (declare (ignore header))
+(defun hello-request-handler (method path header params)
+  (declare (ignore header method))
   (with-output-to-string (*standard-output*)
     ;; (write-header *standard-output*)
     ;; (format t "HTTP/1.1 200 OK~%")

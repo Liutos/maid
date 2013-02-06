@@ -30,3 +30,4 @@ Liutos(<mat.liutos@gmail.com>)
     * Content-Length
 * dispatcher
 * <del>return value as response body</del>
+* <del>parse the method in request</del>

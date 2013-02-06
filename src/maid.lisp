@@ -140,11 +140,20 @@
   (when subtable
     (setf (gethash "/hello" subtable) 'hello-get-handler)))
 
+(defun set-route (method path function-name)
+  (let ((subtable (gethash method *routes*)))
+    (when subtable
+      (setf (gethash path subtable) function-name))))
+
+(defun reply (body stream)
+  (write-header stream (length body))
+  (princ body stream))
+
 (defun serve (request-handler)
   (declare (ignorable request-handler))
   (let ((socket (socket-server 8080)))
     (unwind-protect
-         (loop
+         (progn
            (with-open-stream (stream (socket-accept socket))
              (let* ((line (read-line stream))
                     (url (parse-url line))
@@ -156,11 +165,13 @@
                (let ((handler (lookup-handler method path)))
                  (if handler
                      (let ((body (funcall handler header params)))
-                       (write-header stream (length body))
-                       (princ body stream))
+                       ;; (write-header stream (length body))
+                       ;; (princ body stream)
+                       (reply body stream))
                      (let ((body (funcall request-handler method path header params)))
-                       (write-header stream (length body))
-                       (princ body stream)))))))
+                       ;; (write-header stream (length body))
+                       ;; (princ body stream)
+                       (reply body stream)))))))
       (socket-server-close socket))))
 
 (defun hello-request-handler (method path header params)

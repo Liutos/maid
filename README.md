@@ -31,3 +31,8 @@ Liutos(<mat.liutos@gmail.com>)
 * <del>dispatcher</del>
 * <del>return value as response body</del>
 * <del>parse the method in request</del>
+* multiple clients acception
+* access log
+* <del>provide a function for setting dispatch table easily</del>
+* provide a macro for using dispatch table quickly and easily
+* <del>encapsulate the response returnning procedure</del>

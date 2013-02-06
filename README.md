@@ -28,6 +28,6 @@ Liutos(<mat.liutos@gmail.com>)
   * entity-header
     * <del>Content-Type</del>
     * <del>Content-Length</del>
-* dispatcher
+* <del>dispatcher</del>
 * <del>return value as response body</del>
 * <del>parse the method in request</del>

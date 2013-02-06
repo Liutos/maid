@@ -7,7 +7,7 @@
 
 (defsystem :maid
   :description "Web Server"
-  :version "0.0.2"
+  :version "0.0.3"
   :licence "MIT"
   :author "Liutos <mat.liutos@gmail.com>"
   :depends-on (:iolib

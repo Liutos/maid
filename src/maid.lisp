@@ -53,7 +53,7 @@
 
 (defun parse-url (s)
   (let* ((url (subseq s
-                      (+ 2 (position #\Space s))
+                      (+ 1 (position #\Space s))
                       (position #\Space s :from-end t)))
          (x (position #\? url)))
     (if x
@@ -118,46 +118,61 @@
   (format stream "Content-Length: ~D~%" length)
   (format stream "~%"))
 
+(defparameter *routes*
+  (make-hash-table))
+
+(setf (gethash 'get *routes*) (make-hash-table :test #'equal))
+
+(defun lookup-handler (method path)
+  (multiple-value-bind (subtable found)
+      (gethash method *routes*)
+    (and found
+         (multiple-value-bind (handler found)
+             (gethash path subtable)
+           (and found handler)))))
+
+(defun hello-get-handler (header params)
+  (declare (ignore header params))
+  (format nil "Message from function HELLO-GET-HANDLER in dispatch table."))
+
+;;; Example of using the dispatch table for routing in details
+(let ((subtable (gethash 'get *routes*)))
+  (when subtable
+    (setf (gethash "/hello" subtable) 'hello-get-handler)))
+
 (defun serve (request-handler)
+  (declare (ignorable request-handler))
   (let ((socket (socket-server 8080)))
     (unwind-protect
-         (progn
-            (with-open-stream (stream (socket-accept socket))
-              (let* ((line (read-line stream))
-                     (url (parse-url line))
-                     (method (parse-method line))
-                     (path (car url))
-                     (header (get-header stream))
-                     (params (append (cdr url)
-                                     (get-content-params stream header)))
-                     ;; (*standard-output* stream)
-                     )
-                ;; (write-header stream)
-                ;; (funcall request-handler path header params)
-                ;; (princ (funcall request-handler method path header params) stream)
-                (let ((body (funcall request-handler method path header params)))
-                  (write-header stream (length body))
-                  (princ body stream))
-                )))
+         (loop
+           (with-open-stream (stream (socket-accept socket))
+             (let* ((line (read-line stream))
+                    (url (parse-url line))
+                    (method (parse-method line))
+                    (path (car url))
+                    (header (get-header stream))
+                    (params (append (cdr url)
+                                    (get-content-params stream header))))
+               (let ((handler (lookup-handler method path)))
+                 (if handler
+                     (let ((body (funcall handler header params)))
+                       (write-header stream (length body))
+                       (princ body stream))
+                     (let ((body (funcall request-handler method path header params)))
+                       (write-header stream (length body))
+                       (princ body stream)))))))
       (socket-server-close socket))))
 
 (defun hello-request-handler (method path header params)
   (declare (ignore header method))
   (with-output-to-string (*standard-output*)
-    ;; (write-header *standard-output*)
-    ;; (format t "HTTP/1.1 200 OK~%")
-  ;; (format t "Date: ")
-  ;; (format-rfc1123-timestring *standard-output* (now))
-  ;; (format t "~%")
-  ;; (format t "Connection: close~%")
-  ;; (format t "Server: Maid/0.0.1~%")
-  ;; (format t "Content-Type: text/html~%~%")
-  (if (equal path "greeting")
-      (let ((name (assoc 'name params)))
-        (if (not name)
-            (princ "<html><form>What is your name?<input name='name' /></form></html>")
-            (format t "<html>Nice to meet you, ~a!</html>" (cdr name))))
-      (princ "Sorry...I don't know that page."))))
+    (format t "The PATH parameter is ~S~%" path)
+    (if (equal path "/greeting")
+        (let ((name (assoc 'name params)))
+          (if (not name)
+              (princ "<html><form>What is your name?<input name='name' /></form></html>")
+              (format t "<html>Nice to meet you, ~a!</html>" (cdr name))))
+        (princ "Sorry...I don't know that page."))))
 
 (defun test-server ()
   (serve #'hello-request-handler))

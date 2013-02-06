@@ -19,15 +19,15 @@ Liutos(<mat.liutos@gmail.com>)
 ## TODOs
 
 * response header
-  * <del>Status-Line</strike>
+  * <del>Status-Line</del>
   * general-header
-    * <del>Date</strike>
-    * <del>Connection</strike>
+    * <del>Date</del>
+    * <del>Connection</del>
   * response-header
-    * <del>Server</strike>
+    * <del>Server</del>
   * entity-header
-    * <del>Content-Type</strike>
-    * Content-Length
+    * <del>Content-Type</del>
+    * <del>Content-Length</del>
 * dispatcher
 * <del>return value as response body</del>
 * <del>parse the method in request</del>

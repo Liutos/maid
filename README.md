@@ -37,3 +37,4 @@ Liutos(<mat.liutos@gmail.com>)
 * provide a macro for using dispatch table quickly and easily
 * <del>encapsulate the response returnning procedure</del>
 * <del>handle the 404 situation and return the correct response header</del>
+  * use the condition system for implementing it

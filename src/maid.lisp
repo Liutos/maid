@@ -135,13 +135,29 @@
 
 (setf (gethash 'get *routes*) (make-hash-table :test #'equal))
 
+;; (defun lookup-handler (method path)
+;;   (multiple-value-bind (subtable found)
+;;       (gethash method *routes*)
+;;     (and found
+;;          (multiple-value-bind (handler found)
+;;              (gethash path subtable)
+;;            (and found handler)))))
+
+(define-condition 4xx-error (error)
+  ((status-code
+    :initarg :status-code
+    :reader 4xx-error-status-code)))
+
 (defun lookup-handler (method path)
   (multiple-value-bind (subtable found)
       (gethash method *routes*)
-    (and found
-         (multiple-value-bind (handler found)
-             (gethash path subtable)
-           (and found handler)))))
+    (if found
+        (multiple-value-bind (handler found)
+            (gethash path subtable)
+          (if found
+              handler
+              (error '4xx-error :status-code 404)))
+        (error '4xx-error :status-code 404))))
 
 (defun hello-get-handler (header params)
   (declare (ignore header params))
@@ -161,6 +177,17 @@
   (write-header stream status-code (length body))
   (princ body stream))
 
+(defun handle-request (method path header params stream)
+  (handler-case
+      (let ((handler (lookup-handler method path)))
+        (let ((body (funcall handler header params)))
+          (reply body stream 200)))
+    (4xx-error (e)
+      (reply "Not Found" stream (4xx-error-status-code e)))
+    (condition (c)
+      (declare (ignore c))
+      (reply "Internal Server Error" stream 500))))
+
 (defun serve (request-handler)
   (declare (ignorable request-handler))
   (let ((socket (socket-server 8080)))
@@ -174,13 +201,12 @@
                     (header (get-header stream))
                     (params (append (cdr url)
                                     (get-content-params stream header))))
-               (let ((handler (lookup-handler method path)))
-                 (if handler
-                     (let ((body (funcall handler header params)))
-                       (reply body stream 200))
-                     ;; (let ((body (funcall request-handler method path header params)))
-                     ;;   (reply body stream))
-                     (reply "Not Found" stream 404))))))
+               ;; (let ((handler (lookup-handler method path)))
+               ;;   (if handler
+               ;;       (let ((body (funcall handler header params)))
+               ;;         (reply body stream 200))
+               ;;       (reply "Not Found" stream 404)))
+               (handle-request method path header params stream))))
       (socket-server-close socket))))
 
 (defun hello-request-handler (method path header params)

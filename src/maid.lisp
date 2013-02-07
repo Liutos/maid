@@ -107,25 +107,32 @@
 (defun socket-accept (socket)
   (accept-connection socket :wait t))
 
-;;; Code from http://stackoverflow.com/questions/11084339/getting-the-version-of-an-asdf-system
+;;; Function from http://stackoverflow.com/questions/11084339/getting-the-version-of-an-asdf-system
 (defun system-version (system-designator)
   (let ((system (asdf:find-system system-designator nil)))
     (when (and system (slot-boundp system 'asdf:version))
       (asdf:component-version system))))
 
+(defun maid-version ()
+  (system-version 'maid))
+
 (defun reason-phrase (status-code)
   (case status-code
     (200 "OK")
     (404 "Not Found")
+    (500 "Internal Server Error")
     (otherwise "extension-code")))
+
+(defun gendate ()
+  (format-timestring nil (now) :format local-time:+rfc-1123-format+))
 
 (defun write-header (stream status-code length)
   (format stream "HTTP/1.1 ~D ~A~%" status-code (reason-phrase status-code))
-  (format stream "Date: ")
-  (format-rfc1123-timestring stream (now))
-  (format stream "~%")
+  (format stream "Date: ~A~%" (gendate))
+  ;; (format-rfc1123-timestring stream (now))
+  ;; (format stream "~%")
   (format stream "Connection: close~%")
-  (format stream "Server: Maid/~A~%" (system-version 'maid))
+  (format stream "Server: Maid/~A~%" (maid-version))
   (format stream "Content-Type: text/html~%")
   (format stream "Content-Length: ~D~%" length)
   (format stream "~%"))

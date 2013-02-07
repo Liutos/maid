@@ -107,13 +107,25 @@
 (defun socket-accept (socket)
   (accept-connection socket :wait t))
 
-(defun write-header (stream length)
-  (format stream "HTTP/1.1 200 OK~%")
+;;; Code from http://stackoverflow.com/questions/11084339/getting-the-version-of-an-asdf-system
+(defun system-version (system-designator)
+  (let ((system (asdf:find-system system-designator nil)))
+    (when (and system (slot-boundp system 'asdf:version))
+      (asdf:component-version system))))
+
+(defun reason-phrase (status-code)
+  (case status-code
+    (200 "OK")
+    (404 "Not Found")
+    (otherwise "extension-code")))
+
+(defun write-header (stream status-code length)
+  (format stream "HTTP/1.1 ~D ~A~%" status-code (reason-phrase status-code))
   (format stream "Date: ")
   (format-rfc1123-timestring stream (now))
   (format stream "~%")
   (format stream "Connection: close~%")
-  (format stream "Server: Maid/0.0.2~%")
+  (format stream "Server: Maid/~A~%" (system-version 'maid))
   (format stream "Content-Type: text/html~%")
   (format stream "Content-Length: ~D~%" length)
   (format stream "~%"))
@@ -145,8 +157,8 @@
     (when subtable
       (setf (gethash path subtable) function-name))))
 
-(defun reply (body stream)
-  (write-header stream (length body))
+(defun reply (body stream status-code)
+  (write-header stream status-code (length body))
   (princ body stream))
 
 (defun serve (request-handler)
@@ -165,13 +177,10 @@
                (let ((handler (lookup-handler method path)))
                  (if handler
                      (let ((body (funcall handler header params)))
-                       ;; (write-header stream (length body))
-                       ;; (princ body stream)
-                       (reply body stream))
-                     (let ((body (funcall request-handler method path header params)))
-                       ;; (write-header stream (length body))
-                       ;; (princ body stream)
-                       (reply body stream)))))))
+                       (reply body stream 200))
+                     ;; (let ((body (funcall request-handler method path header params)))
+                     ;;   (reply body stream))
+                     (reply "Not Found" stream 404))))))
       (socket-server-close socket))))
 
 (defun hello-request-handler (method path header params)

@@ -36,3 +36,4 @@ Liutos(<mat.liutos@gmail.com>)
 * <del>provide a function for setting dispatch table easily</del>
 * provide a macro for using dispatch table quickly and easily
 * <del>encapsulate the response returnning procedure</del>
+* <del>handle the 404 situation and return the correct response header</del>

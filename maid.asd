@@ -10,6 +10,7 @@
   :version "0.0.6"
   :licence "MIT"
   :author "Liutos <mat.liutos@gmail.com>"
+  :maintainer "Liutos <mat.liutos@gmail.com>"
   :depends-on (:iolib
                :local-time)
   :components

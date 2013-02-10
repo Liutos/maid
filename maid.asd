@@ -7,7 +7,7 @@
 
 (defsystem :maid
   :description "Web Server"
-  :version "0.0.6"
+  :version "0.0.7"
   :licence "MIT"
   :author "Liutos <mat.liutos@gmail.com>"
   :maintainer "Liutos <mat.liutos@gmail.com>"

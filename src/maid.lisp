@@ -182,7 +182,8 @@
 
 (defun reply (body stream status-code)
   (write-header stream status-code (length body))
-  (princ body stream))
+  (princ body stream)
+  (finish-output stream))
 
 (defun handle-request (method path header params stream)
   (handler-case
@@ -195,26 +196,65 @@
       (declare (ignore c))
       (reply "Internal Server Error" stream 500))))
 
-(defun serve (request-handler)
+;; (defun serve (request-handler)
+;;   (declare (ignorable request-handler))
+;;   (let ((server (socket-server 8080)))
+;;     (unwind-protect
+;;          (progn
+;;            ;; Handle multiple clients in a serial fashion
+;;            (with-open-stream (stream (socket-accept server))
+;;              (let* ((line (read-line stream))
+;;                     (url (parse-url line))
+;;                     (method (parse-method line))
+;;                     (path (car url))
+;;                     (header (get-header stream))
+;;                     (params (append (cdr url)
+;;                                     (get-content-params stream header))))
+;;                ;; (let ((handler (lookup-handler method path)))
+;;                ;;   (if handler
+;;                ;;       (let ((body (funcall handler header params)))
+;;                ;;         (reply body stream 200))
+;;                ;;       (reply "Not Found" stream 404)))
+;;                (handle-request method path header params stream))))
+;;       (socket-server-close server)))
+;;   t)
+
+(defvar *server-event-base*)
+
+(defun make-client-response-handler (client)
+  (lambda (fd event exception)
+    (declare (ignore fd event exception))
+    (let* ((line (read-line client))
+           (url (parse-url line))
+           (method (parse-method line))
+           (path (car url))
+           (header (get-header client))
+           (params (append (cdr url)
+                           (get-content-params client header))))
+      (handle-request method path header params client))))
+
+(defun make-server-listener-handler (server)
+  (lambda (fd event exception)
+    (declare (ignore fd event exception))
+    (let ((client (socket-accept server)))
+      (set-io-handler *server-event-base*
+                      (socket-os-fd client)
+                      :read
+                      (make-client-response-handler client)))))
+
+(defun serve (&optional request-handler)
   (declare (ignorable request-handler))
-  (let ((socket (socket-server 8080)))
+  (let ((server (socket-server 8080))
+        (*server-event-base* (make-instance 'iomux:event-base :exit-when-empty t)))
     (unwind-protect
          (progn
-           (with-open-stream (stream (socket-accept socket))
-             (let* ((line (read-line stream))
-                    (url (parse-url line))
-                    (method (parse-method line))
-                    (path (car url))
-                    (header (get-header stream))
-                    (params (append (cdr url)
-                                    (get-content-params stream header))))
-               ;; (let ((handler (lookup-handler method path)))
-               ;;   (if handler
-               ;;       (let ((body (funcall handler header params)))
-               ;;         (reply body stream 200))
-               ;;       (reply "Not Found" stream 404)))
-               (handle-request method path header params stream))))
-      (socket-server-close socket))))
+           (set-io-handler *server-event-base*
+                           (socket-os-fd server)
+                           :read
+                           (make-server-listener-handler server))
+           (event-dispatch *server-event-base*))
+      (socket-server-close server)))
+  t)
 
 (defun hello-request-handler (method path header params)
   (declare (ignore header method))

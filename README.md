@@ -32,9 +32,13 @@ Liutos(<mat.liutos@gmail.com>)
 * <del>return value as response body</del>
 * <del>parse the method in request</del>
 * multiple clients acception
+  * <del>use the multiplexer in IOlib</del>
 * access log
 * <del>provide a function for setting dispatch table easily</del>
 * provide a macro for using dispatch table quickly and easily
 * <del>encapsulate the response returnning procedure</del>
 * <del>handle the 404 situation and return the correct response header</del>
-  * use the condition system for implementing it
+  * <del>use the condition system for implementing it</del>
+* handle the HANGUP condition signaled by IOlib
+* run the server as daemon
+* customize the server through configuration file

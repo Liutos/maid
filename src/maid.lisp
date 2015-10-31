@@ -221,17 +221,38 @@
 
 (defvar *server-event-base*)
 
-(defun make-client-response-handler (client)
+(defun make-client-response-handler (client disconnector)
   (lambda (fd event exception)
     (declare (ignore fd event exception))
-    (let* ((line (read-line client))
-           (url (parse-url line))
-           (method (parse-method line))
-           (path (car url))
-           (header (get-header client))
-           (params (append (cdr url)
-                           (get-content-params client header))))
-      (handle-request method path header params client))))
+    (handler-case
+        (let* ((line (read-line client))
+               (url (parse-url line))
+               (method (parse-method line))
+               (path (car url))
+               (header (get-header client))
+               (params (append (cdr url)
+                               (get-content-params client header))))
+          (handle-request method path header params client))
+      (end-of-file ()
+        (funcall disconnector :close :read))
+      (hangup ()
+        (funcall disconnector :close)))))
+
+(defun make-client-disconnector (client)
+  (lambda (&rest events)
+    (format t "Disconnecting socket: ~A~%" client)
+    (let ((fd (socket-os-fd client)))
+      (if (not (intersection '(:read :write :close) events))
+          (remove-fd-handlers *server-event-base* fd :read t :write t :error t)
+          (progn
+            (when (member :read events)
+              (remove-fd-handlers *server-event-base* fd :read t))
+            (when (member :write events)
+              (remove-fd-handlers *server-event-base* fd :write t))
+            (when (member :error events)
+              (remove-fd-handlers *server-event-base* fd :error t)))))
+    (when (member :close events)
+      (close client :abort t))))
 
 (defun make-server-listener-handler (server)
   (lambda (fd event exception)
@@ -240,7 +261,8 @@
       (set-io-handler *server-event-base*
                       (socket-os-fd client)
                       :read
-                      (make-client-response-handler client)))))
+                      (make-client-response-handler client
+                                                    (make-client-disconnector client))))))
 
 (defun serve (&optional request-handler)
   (declare (ignorable request-handler))
